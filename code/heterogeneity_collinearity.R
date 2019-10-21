@@ -6,7 +6,7 @@ library(tidyverse)
 library(ggplot2)
 library(raster)
 library(scales)
-library(colormap)
+library(colormap) # devtools::install_github("matthewkling/colormap")
 library(grid)
 library(gridExtra)
 library(mgcv)
@@ -29,7 +29,7 @@ names(clim) <- c("temp", "ppt")
 clim <- crop(clim, extent(-180, 180, -66, 66))
 
 # standardize
-clim$ppt <- log10(clim$ppt)
+clim$ppt <- log10(clim$ppt + 1)
 clim$temp <- scale(clim$temp)
 clim$ppt <- scale(clim$ppt)
 
@@ -164,8 +164,10 @@ exemplar <- c(a=40289, b=81455, c=192946, d=47305)
 e <- ls %>%
       filter(id %in% exemplar) %>%
       write_csv("data/collinearity_heterogeneity/example_landscapes.csv") %>%
-      group_by(heterogeneity, collinearity) %>%
-      group_map(~ ls_data(.x, clim)) %>%
+      split(.$quadrant) %>%
+      map_df(ls_data, climate=clim) %>%
+      #group_by(heterogeneity, collinearity) %>%
+      #group_map(~ ls_data(.x, clim)) %>%
       group_by(heterogeneity, collinearity) %>%
       mutate(t=rescale(temp),
              p=rescale(ppt),
@@ -312,6 +314,7 @@ global_map <- ggplot() +
       geom_point(data=ltrs, aes(x, y)) +
       geom_text(data=ltrs, aes(x, y, label=to_lower_ascii(lab)), 
                 size=4, nudge_x=8, fontface="italic") +
+      coord_fixed(ratio = 1) +
       scale_fill_manual(values=pal) +
       theme_void() +
       theme(legend.position="none")
@@ -320,14 +323,14 @@ global_map <- ggplot() +
 
 ### assemble multipanel figure ###
 
-hts <- c(1.5, 1.2, 1.1, 1.1)
+hts <- c(1, 1.2, 1.1, 1.1)
 p <- arrangeGrob(global_map, global_scatter, nrow=1, widths=c(3, 1))
 p <- arrangeGrob(p, distances, climates, maps, ncol=1, heights=hts)
 
-ggs("figures/collinearity_heterogeneity.png", p, width=8, height=10,
+ggs("figures/collinearity_heterogeneity.png", p, width=8, height=9,
     add = grid.text(LETTERS[1:4], 
                     x=.02, 
-                    y=c(.98, .66, .42, .20),
+                    y=c(.98, .72, .48, .22),
                     gp=gpar(fontsize=20, fontface="bold", col="black")))
 
 

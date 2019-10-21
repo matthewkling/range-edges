@@ -10,7 +10,7 @@ select <- dplyr::select
 
 
 
-##### step 1: calculate sign agreement between temp and precip climate changedeltas #####
+##### step 1: calculate sign agreement between temp and precip climate change deltas #####
 
 # pre-format a temp, precip raster stack -- a sequence of
 # cropping, reclassifying, transforming, and aggregating
@@ -22,7 +22,7 @@ prep <- function(paths){
             stack() %>%
             crop(extent(-180, 180, -66, 66)) %>%
             reclassify(c(-Inf, -2000, NA))
-      x[[2]] <- log10(x[[2]])
+      x[[2]] <- log10(x[[2]] + 1)
       x <- x %>%
             writeRaster(tmp, overwrite=T) %>%
             aggregate(50)
@@ -51,7 +51,7 @@ for(i in seq(1, length(futures), 2)){
       c(futures[i], futures[i+1]) %>%
             prep() %>%
             stack(historic) %>%
-            '['(c(3, 1, 4, 2)) %>% 
+            '[['(c(3, 1, 4, 2)) %>% 
             calc(delta_alignment) %>%
             writeRaster(paste0("data/climate_deltas/", 
                                i, ".tif"), overwrite=T)
@@ -75,7 +75,7 @@ r <- list.files("data/climate_historic", full.names=T) %>%
       stack() %>%
       crop(extent(-180, 180, -66, 66)) %>%
       reclassify(c(-Inf, -2000, NA))
-r[[2]] <- log10(r[[2]])
+r[[2]] <- log10(r[[2]] + 1)
 r %>%
       writeRaster(tmp, overwrite=T) %>%
       aggregate(fact=c(50, 50, 2), fun=correlation) %>%
@@ -114,8 +114,11 @@ m <- list.files("data/climate_deltas", full.names=T) %>%
 p <- ggplot(m, aes(x, y, fill=alignment)) +
       geom_raster() +
       scale_fill_gradientn(colours=c("darkorchid", "khaki", "forestgreen")) +
+      guides(fill=guide_colorbar(barheight=5)) +
+      scale_x_continuous(expand=c(0,0)) +
+      scale_y_continuous(expand=c(0,0)) +
       theme_void() +
-      theme(legend.position=c(.15, .3)) +
+      theme(legend.position=c(.1, .33)) +
       labs(fill="Proportion of\nGCMs predicting\nalignment\n")
-ggsave("figures/spatiotemporal_alignment.png", p, width=8, height=5)
+ggsave("figures/spatiotemporal_alignment.png", p, width=9, height=9 / 360 * 132)
 

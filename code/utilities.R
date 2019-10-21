@@ -340,7 +340,7 @@ ggs <- function (filename, plot = last_plot(), device = NULL, path = NULL,
             if (old_dev > 1) grDevices::dev.set(old_dev)
       }))
       grid.draw(plot)
-      add
+      lapply(add, function(x) x)
       invisible()
 }
 
