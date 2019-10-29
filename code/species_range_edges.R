@@ -238,10 +238,10 @@ spp_plots <- function(spp){
                         fill=x$hex) +
             geom_polygon(data=sdg, aes(long, lat, group=piece),
                          fill=NA, color="#ff8000", size=1) +
-            annotate(geom="text", size=15,
-                     x=mean(range(x$x))-.45*mag, 
-                     y=mean(range(x$y))+.45*mag,
-                     label=letters[match(spp, species)]) +
+            #annotate(geom="text", size=20, fontface="bold",
+            #         x=mean(range(x$x))-.42*mag, 
+            #         y=mean(range(x$y))+.45*mag,
+            #         label=paste0("(", letters[match(spp, species)], ")")) +
             annotate(geom="text", size=8,
                      x=mean(range(x$x))+.45*mag, 
                      y=mean(range(x$y))+.45*mag,
@@ -400,4 +400,8 @@ p <- arrangeGrob(arrangeGrob(s[[1]], s[[2]], nrow=1),
 png("figures/species_range_edges.png", 
     width=2000, height=2000)
 grid.draw(p)
+grid.text(paste0("(", letters[1:4], ")"), 
+          x=c(.03, .53, .03, .53), 
+          y=c(.98, .98, .64, .64),
+          gp=gpar(fontsize=60, fontface="bold", col="black"))
 dev.off()

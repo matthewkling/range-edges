@@ -30,6 +30,9 @@ clim <- crop(clim, extent(-180, 180, -66, 66))
 
 # standardize
 clim$ppt <- log10(clim$ppt + 1)
+means <- cellStats(clim, mean)
+sds <- cellStats(clim, sd)
+saveRDS(list(means=means, sds=sds), "data/collinearity_heterogeneity/climate_stats.rds")
 clim$temp <- scale(clim$temp)
 clim$ppt <- scale(clim$ppt)
 
@@ -114,6 +117,7 @@ s <- stack("data/collinearity_heterogeneity/collinearity_heterogeneity.tif")
 splines <- stack("data/collinearity_heterogeneity/distance_splines.tif")
 clim <- stack("data/collinearity_heterogeneity/climate_data.tif")
 names(clim) <- c("temp", "ppt")
+clim_stats <- readRDS("data/collinearity_heterogeneity/climate_stats.rds")
 
 id <- s[[1]]
 id[] <- 1:ncell(id)
@@ -202,7 +206,8 @@ maps <- ggplot(e, aes(lsx, lsy)) +
             strip.text.x=element_text(face="bold.italic")) +
       labs(x="longitude", y="latitude")
 
-climates <- ggplot(e, aes(temp/100, ppt)) +
+climates <- ggplot(e, aes( (temp*clim_stats$sds["temp"] + clim_stats$means["temp"])/100, 
+                           10^(ppt*clim_stats$sds["ppt"] + clim_stats$means["ppt"]) - 1  )) +
       geom_point(color=e$hex) +
       theme_minimal() +
       facet_wrap(heterogeneity~collinearity,
@@ -328,10 +333,10 @@ p <- arrangeGrob(global_map, global_scatter, nrow=1, widths=c(3, 1))
 p <- arrangeGrob(p, distances, climates, maps, ncol=1, heights=hts)
 
 ggs("figures/collinearity_heterogeneity.png", p, width=8, height=9,
-    add = grid.text(LETTERS[1:4], 
+    add = grid.text(paste0("(", letters[1:4], ")"), 
                     x=.02, 
-                    y=c(.98, .72, .48, .22),
-                    gp=gpar(fontsize=20, fontface="bold", col="black")))
+                    y=c(.98, .72, .48, .23),
+                    gp=gpar(fontsize=18, fontface="bold", col="black")))
 
 
 
