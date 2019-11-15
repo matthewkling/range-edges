@@ -170,8 +170,6 @@ e <- ls %>%
       write_csv("data/collinearity_heterogeneity/example_landscapes.csv") %>%
       split(.$quadrant) %>%
       map_df(ls_data, climate=clim) %>%
-      #group_by(heterogeneity, collinearity) %>%
-      #group_map(~ ls_data(.x, clim)) %>%
       group_by(heterogeneity, collinearity) %>%
       mutate(t=rescale(temp),
              p=rescale(ppt),
@@ -187,7 +185,10 @@ e <- split(e, e$group)[c(4,2,3,1)] %>%
             x$hex <- colorwheel2d(xd, kernel=function(x) x^2)
             x
       }) %>%
-      do.call("rbind", .)
+      do.call("rbind", .) %>%
+      mutate(facet = paste(heterogeneity, collinearity),
+             facet = factor(facet, levels=c("low low", "low high", 
+                                          "high low", "high high")))
 
 label_letters <- function(x){
       y <- label_both(x, multi_line=F)
@@ -197,8 +198,7 @@ label_letters <- function(x){
 
 maps <- ggplot(e, aes(lsx, lsy)) +
       geom_raster(fill=e$hex) +
-      facet_wrap(heterogeneity~collinearity,
-                 scales="free", as.table=F, nrow=1,
+      facet_wrap(~facet, scales="free", as.table=F, nrow=1,
                  labeller=label_letters) +
       theme_minimal() +
       theme(legend.position="none",
@@ -208,12 +208,11 @@ maps <- ggplot(e, aes(lsx, lsy)) +
 
 climates <- ggplot(e, aes( (temp*clim_stats$sds["temp"] + clim_stats$means["temp"])/100, 
                            10^(ppt*clim_stats$sds["ppt"] + clim_stats$means["ppt"]) - 1  )) +
-      geom_point(color=e$hex) +
+      geom_point(color=e$hex, size=2) +
       theme_minimal() +
-      facet_wrap(heterogeneity~collinearity,
-                 scales="free", as.table=F, nrow=1,
-                 labeller=label_letters) +
-      theme(legend.position="none",
+  facet_wrap(~facet, scales="free", as.table=F, nrow=1,
+             labeller=label_letters) +
+  theme(legend.position="none",
             strip.text.x=element_text(face="bold.italic")) +
       labs(x="temperature (°C)", y="precipitation (mm)")
 
@@ -247,6 +246,7 @@ dd <- dd %>%
                 p75=quantile(clim, .75),
                 p95=quantile(clim, .95),
                 p99=quantile(clim, .995)) %>%
+      ungroup() %>%
       mutate(group=paste(collinearity!="low", heterogeneity!="low"))
 
 dde_txt <- dde %>%
@@ -278,7 +278,7 @@ distances <- ggplot() +
       scale_fill_manual(values=pal) +
       scale_color_manual(values=pal) +
       theme_minimal() +
-      facet_wrap(heterogeneity~collinearity, labeller=lb, #scales="free",
+      facet_wrap(heterogeneity~collinearity, labeller=lb,
                  as.table=F, nrow=1) +
       theme(legend.position="none",
             strip.text.x=element_text(face="bold")) +
